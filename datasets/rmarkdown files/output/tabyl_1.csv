@@ -1,0 +1,38 @@
+"","event_L2","CONTACT WITH OBJECTS AND EQUIPMENT","EXPOSURE TO HARMFUL SUBSTANCES OR ENVIRONMENTS","FALLS, SLIPS, TRIPS","FIRES AND EXPLOSIONS","Nonclassifiable","OVEREXERTION AND BODILY REACTION","TRANSPORTATION INCIDENTS","VIOLENCE AND OTHER INJURIES BY PERSONS OR ANIMALS"
+"1","Aircraft incidents",0,0,0,0,0,0,1,0
+"2","Animal and insect related incidents",0,0,0,0,0,0,0,28
+"3","Animal and other non-motorized vehicle transportation incidents",0,0,0,0,0,0,1,0
+"4","Bodily conditions, n.e.c.",0,0,0,0,0,2,0,0
+"5","Caught in or compressed by equipment or objects",1019,0,0,0,0,0,0,0
+"6","Contact with objects and equipment, n.e.c.",11,0,0,0,0,0,0,0
+"7","Contact with objects and equipment, unspecified",96,0,0,0,0,0,0,0
+"8","Explosions",0,0,0,36,0,0,0,0
+"9","Exposure to electricity",0,394,0,0,0,0,0,0
+"10","Exposure to harmful substances or environments, unspecified",0,3,0,0,0,0,0,0
+"11","Exposure to other harmful substances",0,78,0,0,0,0,0,0
+"12","Exposure to temperature extremes",0,376,0,0,0,0,0,0
+"13","Fall or jump curtailed by personal fall arrest system",0,0,18,0,0,0,0,0
+"14","Fall, slip, trip, n.e.c.",0,0,1,0,0,0,0,0
+"15","Fall, slip, trip, unspecified",0,0,66,0,0,0,0,0
+"16","Falls on same level",0,0,325,0,0,0,0,0
+"17","Falls to lower level",0,0,2943,0,0,0,0,0
+"18","Fire or explosion, unspecified",0,0,0,1,0,0,0,0
+"19","Fires",0,0,0,101,0,0,0,0
+"20","Injury by person—unintentional or intent unknown",0,0,0,0,0,0,0,6
+"21","Intentional injury by person",0,0,0,0,0,0,0,18
+"22","Jumps to lower level",0,0,37,0,0,0,0,0
+"23","Nonclassifiable",0,0,0,0,91,0,0,0
+"24","Nonroadway incidents involving motorized land vehicles",0,0,0,0,0,0,177,0
+"25","Other exertions or bodily reactions",0,0,0,0,0,22,0,0
+"26","Overexertion and bodily reaction, unspecified",0,0,0,0,0,7,0,0
+"27","Overexertion involving outside sources",0,0,0,0,0,44,0,0
+"28","Pedestrian vehicular incidents",0,0,0,0,0,0,315,0
+"29","Rail vehicle incidents",0,0,0,0,0,0,1,0
+"30","Roadway incidents involving motorized land vehicle",0,0,0,0,0,0,35,0
+"31","Rubbed or abraded by friction or pressure",3,0,0,0,0,0,0,0
+"32","Slip or trip without fall",0,0,32,0,0,0,0,0
+"33","Struck against object or equipment",204,0,0,0,0,0,0,0
+"34","Struck by object or equipment",1985,0,0,0,0,0,0,0
+"35","Struck, caught, or crushed in collapsing structure, equipment, or material",70,0,0,0,0,0,0,0
+"36","Transportation incident, unspecified",0,0,0,0,0,0,1,0
+"37","Water vehicle incidents",0,0,0,0,0,0,15,0

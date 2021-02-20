@@ -1,0 +1,534 @@
+---
+title: "Frequency Analysis - OSHA Severe Reports"
+author: "Abdullah Alsharef"
+date: "3/14/2020"
+output:
+  pdf_document:
+    df_print: kable
+    fig_caption: yes
+    fig_height: 6
+    fig_width: 7
+    number_sections: yes
+    toc: yes
+  html_document:
+    df_print: paged
+    toc: yes
+  word_document:
+    toc: yes
+classoption: landscape
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = F, message = F)
+```
+
+```{r, echo=FALSE}
+library(tidyverse)
+library(readxl)
+library(lubridate)
+library(janitor)
+library(maps)
+
+```
+
+
+\newpage
+# Introduction
+This Document shows the frequency of the followings:
+
+- State
+- Contractor (Industry)
+- Hospitalized
+- Amputation
+- Event
+- Source (Main Source)
+- Main Source and Secondary source
+- Part of Body
+- Nature
+- Part of Body and nature
+
+The database was obtianed from *[OSHA Severe Reports Database](https://www.osha.gov/severeinjury/)*. The Contractor industry cased were obtained from *[North American Industry Classification System](https://www.census.gov/eos/www/naics/downloadables/downloadables.html)*.  Event, Source, Part of Body, Nature were cross referenced from the *[The Occupational Injury and Illness Classification System (OIICS) Manual](https://www.bls.gov/iif/oshoiics.htm)*.
+
+The database was downloaded on 2/23/2020.  The database has number of severe injury across different industries.
+
+# Compare Construction with different Industries
+This analysis investigates the proportion of construction, compared with other industires.
+
+- The total number of injury reports = 48036 reports (from all indusries)
+- NUmber of reports with missing industries = 2 reports
+- The relative proportion is for cases after discarding the two missing cases - n = 48034
+
+```{r}
+# read all cases
+all <- read_excel("datasets/rmarkdown files/severeinjury_ORIGINAL__modified_E.xlsx")
+
+# read the naics
+naics <- read_excel("datasets/rmarkdown files/naics/NAICS_L2.xlsx",sheet = 1, col_types = c( "numeric","guess"))
+
+# left join
+all_v2 <- left_join(all,naics)
+# number of cases (blank)
+sum_all_v2 <- all_v2 %>% 
+  filter(!is.na(NAICS_L2_v1)) %>% 
+  count(NAICS_L2_v1, sort = T)
+
+# Proportion
+sum_all_v2 %>% 
+  rename(Industry =  NAICS_L2_v1) %>% 
+  mutate(Percentage = n*100 / sum(n))
+  
+```
+
+Intresteingly, construction is second in terms of severe injuries followed by manufacturing.
+
+- Major finding: although fatalities statistics shows a decrease of improvement in the number of fatalities, the construction industry is second in severe injuries followed by Manfufacturing.
+- Check and compare the rank of fatalities between construction and other industires.
+
+# Analysis by Time
+- Would there be a way to perform time series forecasting for the monthly number of cases.
+  - One model to consider is seasonality.
+
+```{r}
+# read Construction cases 
+
+cons <- read_excel("datasets/rmarkdown files/Osha_construction_Data_3-14-2020_neededVariables.xlsx")
+
+# extract month and year
+cons_v2 <-cons %>% 
+  mutate(EventDate_Month = month(EventDate),
+         EventDate_year = year(EventDate) )
+# count 
+freq_cons_v2 <- cons_v2 %>%   
+  count(EventDate_Month,EventDate_year) %>% 
+  arrange(EventDate_year, EventDate_Month)
+
+count_11 <- freq_cons_v2 %>% 
+  rename (Month = EventDate_Month,Year = EventDate_year)
+
+write.csv(count, "datasets/count.csv")
+  
+# Forecasting problem
+# https://otexts.com/fpp3/
+
+# Fundamentally, when analysing time series you often want to decompose them into (i) global trend, (ii) periodic seasonalities, (iii) semi-periodic cycles, and (iv) the rest. For instance, your yearly seasonality will tell you about summer vs winter; after adjusting for the trend. You get predictions by forecasting each component separately (e.g. trend, seasonality) and then putting them together.
+
+# https://www.youtube.com/watch?v=Ykiuj16P450
+# https://www.youtube.com/channel/UCK71km-8VQmXVPg0pQWAyog/videos 
+# https://www.youtube.com/watch?v=Ykiuj16P450
+
+ts <- count_11 %>% 
+  mutate(Month = sprintf("%02i", Month)) %>% 
+  mutate(day = "01") %>% 
+  unite(date, Year, Month, day, sep = "-") %>% 
+  mutate(date = ymd(date))
+ts %>% 
+  ggplot(aes(date, n)) +
+  geom_line() +
+  geom_smooth(method = "loess", span = 2, se = FALSE, formula = 'y~x')
+
+# What would be the way to test wheather the model is statistically different than simple mean? I guess it's the trend
+
+```
+
+```{r}
+freq_cons_v3 <- freq_cons_v2 %>% 
+  mutate(dat = paste0(EventDate_Month, sep = "/" , EventDate_year)) %>% 
+  mutate (dat2 = date(parse_date_time(dat, "my"))  )
+```
+
+```{r}
+# time series plot
+p <- ggplot(freq_cons_v3, aes(x=dat2, y=n)) +
+  geom_line() +
+  geom_point() +
+  xlab("") + 
+  ylab("Frequency")+
+  scale_x_date(date_breaks = "6 month", date_labels = "%m-%Y") +
+    theme_bw(12)
+p
+
+#  scale_x_date(date_breaks = "1 month", date_labels = "%m-%Y")
+
+
+# Plot the data monthly for every year on top of each other and fit the model.  Check it is statistically significant or not.
+
+# see if you could apply KNN on a time-series regression?
+
+```
+
+
+```{r}
+# sum by year
+freq_cons_v3 %>% 
+  group_by(EventDate_year) %>% 
+  summarise(sum1 = sum(n)) %>% 
+  filter(EventDate_year < 2019) %>% 
+  rename(Year = EventDate_year, Frequency = sum1)
+
+```
+
+- The first construction case was reported on 1/2/2015
+- The last construction case was reported on 7/31/2019
+
+# Analysis by State
+- Number of cases = 8563
+- No missing
+
+```{r}
+proper=function(s) sub("(.)", ("\\U\\1"), tolower(s), pe=TRUE)
+
+# Viz the freq by State
+state <- cons_v2 %>% 
+  count(State, sort = T) %>% 
+  mutate(State = proper(State))
+
+state
+
+
+```
+
+```{r}
+# data viz
+thismap <- map_data ("state")
+ggplot(thismap, aes(long, lat, group=group, fill=region)) + 
+  geom_polygon(show.legend = F) +
+  geom_polygon(color = "gray90", size = 0.1) + guides(fill = FALSE) +
+  ggtitle("Map of USA")
+
+# consider adding ggtext to include the islelands 
+
+# review
+# https://socviz.co/maps.html
+# https://www.datanovia.com/en/blog/how-to-create-a-map-using-ggplot2/
+# https://stackoverflow.com/questions/23714052/ggplot-mapping-us-counties-problems-with-visualization-shapes-in-r
+# https://stackoverflow.com/questions/48832201/plot-a-numerical-values-in-united-states-map-based-on-abbreviated-state-names
+# https://stackoverflow.com/questions/48832201/plot-a-numerical-values-in-united-states-map-based-on-abbreviated-state-names
+```
+str(thismap)
+
+
+# Analysis By Contractor
+
+## Contractor - Level 1
+
+```{r}
+cons_v2 %>% 
+  count(NAICS_L3, sort = T)
+
+```
+
+## Contractor - Level 2
+
+```{r}
+cons_v2 %>% 
+  count(NAICS_L4, sort = T)
+```
+
+## Contractor - Level 3
+
+```{r}
+cons_v2 %>% 
+  count(NAICS_L5, sort = T)
+```
+
+- We will use level 1 and/or level 2 as level 3 increase the dimensions.
+
+# Analysis By Event
+
+## Event - Level 1
+
+```{r}
+cons_v2 %>% 
+  count(event_L1, sort = T)
+
+```
+
+## Event - Level 2
+
+```{r}
+cons_v2 %>% 
+  count(event_L2, sort = T)
+```
+
+## Event - Level 3
+
+```{r}
+cons_v2 %>% 
+  count(event_L3, sort = T)
+```
+
+## Event 1 and 2
+
+```{r}
+tabyl_1 <- cons_v2 %>% 
+  tabyl ( event_L2, event_L1)
+
+write.csv(tabyl_1, "datasets/rmarkdown files/output/tabyl_1.csv", na = "")
+```
+
+- We will use level 1 and/or level 2 as level 3 increase the dimensions.
+
+
+# Hospitilization
+
+```{r}
+cons_v2 %>% 
+  count(Hospitalized_Y_N, sort = T)
+```
+
+## Hospitilization by Event
+```{r}
+# cluster the anlysis by Event 
+cons_v2 %>% 
+  group_by(event_L1) %>% 
+  count(Hospitalized_Y_N)
+```
+
+```{r}
+# cluster the anlysis by Event
+cons_v2 %>% 
+  tabyl (event_L1, Hospitalized_Y_N)
+```
+
+# Amputation
+
+```{r}
+cons_v2 %>% 
+  count(Amputation_Y_N)
+```
+
+## Amputation by Event
+
+```{r}
+# cluster the anlysis by Event
+cons_v2 %>% 
+  tabyl (event_L1, Amputation_Y_N)
+
+```
+
+## Amputation by Source - Level 1
+
+```{r}
+cons_v2 %>% 
+  tabyl (source1_L1, Amputation_Y_N)
+```
+
+## Amputation by Source - Level 2
+
+
+```{r}
+cons_v2 %>% 
+  tabyl (source1_L2, Amputation_Y_N) %>% 
+  arrange(desc(Y))
+```
+
+## Amputation by Part of Body - Level 1
+
+```{r}
+cons_v2 %>% 
+  tabyl (part_L1, Amputation_Y_N) %>% 
+  arrange(desc(Y))
+```
+
+## Amputation by Part of Body - Level 2
+
+```{r}
+cons_v2 %>% 
+  tabyl (part_L2, Amputation_Y_N) %>% 
+  arrange(desc(Y))
+```
+
+# Analysis By Source (Main Source)
+
+## Source (Main Source) - Level 1
+
+```{r}
+cons_v2 %>% 
+  count(source1_L1, sort = T)
+
+```
+
+## Source (Main Source) - Level 2
+
+```{r}
+cons_v2 %>% 
+  count(source1_L2, sort = T)
+```
+
+## Source (Main Source) - Level 3
+
+```{r}
+cons_v2 %>% 
+  count(source1_L3, sort = T)
+```
+
+
+## Source by Event - Level 1
+
+```{r}
+
+cons_v2 %>% 
+  tabyl (source1_L1, event_L1) 
+
+cons_v2 %>% 
+  count(event_L1, source1_L1, sort = T)
+
+```
+
+
+- We will use level 1 and/or level 2 after selecting the top 10 or 20 (still to be decided).
+
+
+# Analysis By Main Source and Secondary Source
+The number of cases with both main source and secondary source are 2792. The number of missing secondary source is 5771. The number of construction related cases is 8563.
+
+## Main Source and Secondary source - Level 1
+
+```{r}
+# count the missing cases 
+miss_source2 <- cons_v2 %>% 
+  filter(is.na(source2_L1)) %>% 
+  count(source2_L1)
+
+cons_v2 %>% 
+  filter(!is.na(source2_L1)) %>% 
+  count(source1_L1, source2_L1, sort = T)
+
+
+```
+
+## Main Source and Secondary source - Level 2
+
+```{r}
+# show top 20 - the number of combination is 591
+cons_v2 %>% 
+  filter(!is.na(source2_L1)) %>% 
+  count(source1_L2, source2_L2, sort = T) %>% 
+  top_n(20)
+```
+
+## Main Source and Secondary source - Level 3
+
+```{r}
+cons_v2 %>% 
+  filter(!is.na(source2_L1)) %>% 
+  count(source1_L3, source2_L3, sort = T) %>% 
+  top_n(20)
+```
+
+# Analysis By Part of Body
+
+## Part of Body - Level 1
+
+```{r}
+cons_v2 %>% 
+  count(part_L1, sort = T)
+```
+
+## Part of Body - Level 2
+
+```{r}
+cons_v2 %>% 
+  count(part_L2, sort = T)
+```
+
+## Part of Body - Level 3
+
+```{r}
+cons_v2 %>% 
+  count(part_L3, sort = T)
+```
+
+
+# Analysis By Nature
+
+## Nature - Level 1
+
+```{r}
+cons_v2 %>% 
+  count(nature_L1, sort = T)
+```
+
+## Nature - Level 2
+
+```{r}
+cons_v2 %>% 
+  count(nature_L2, sort = T)
+```
+
+## Nature - Level 3
+
+```{r}
+cons_v2 %>% 
+  count(nature_L3, sort = T)
+```
+
+# Part of Body and Nature
+
+## Part of Body and Nature - Level 1
+
+```{r}
+cons_v2 %>% 
+  count(part_L1 , nature_L1, sort = T)
+```
+
+## Part of Body and Nature - Level 2
+
+```{r}
+# part L2 and nature L1
+cons_v2 %>% 
+  count(part_L2 , nature_L1, sort = T)
+
+# part L2 and nature L2
+cons_v2 %>% 
+  count(part_L2 , nature_L2, sort = T)
+```
+
+## Part of Body and Nature - Level 3
+
+```{r}
+cons_v2 %>% 
+  count(part_L3 , nature_L3, sort = T)
+```
+
+```{r}
+write.csv(cons_v2, "Final_Prepetation/cons_v2.csv", na = "")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
